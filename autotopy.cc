@@ -1,12 +1,11 @@
 #include <stdio.h>
-// #include <stdlib.h>
 #include <vector>
 #include <cmath>
 #include <iostream>
 #include <bits/stdc++.h> 
 
-#define COLS 4
-#define ROWS 4
+#include "tools.hpp"
+#include "autotopy.hpp"
 
 int factorial(int n){
     if (n == 0){
@@ -15,33 +14,13 @@ int factorial(int n){
     return n * factorial(n-1);
 }
 
-void read_file(int *qgroup, char *filename){
-    FILE *fp;
-    fp = fopen(filename, "r");
-    if (fp == NULL){
-        printf("Error opening file\n");
-        exit(1);
-    }
+int perm(int *p, int x){
     int i = 0;
-    int j = 0;
-    while (fscanf(fp, "%d", &qgroup[i*COLS + j]) == 1) {
-        j++;
-        if (fgetc(fp) == '\n') {
-            i++;
-            j = 0;
-        }
+    while (p[i] != x){
+        i++;
     }
-    fclose(fp);
+    return i;
 }
-
-void print_perm(int *p, char const *name){
-    printf("%s = ", name);
-    for (int i=0; i<3; i++){
-        printf("%d ", p[i]);
-    }
-    printf("||");
-}
-
 
 int check_autotopy(int *q, int *alpha, int *beta, int *gamma){
     for (int i=0; i<COLS; i ++){
@@ -55,16 +34,43 @@ int check_autotopy(int *q, int *alpha, int *beta, int *gamma){
 }
 
 
+void init_perm(int *p){
+    for (int i = 0; i < ROWS; i++) {
+        p[i] = i;
+    }
+}
 
-void find_autotopy(int *q, std::vector<int>& autotopy){
-    int size = 3*factorial(ROWS);
-    autotopy.resize(size*size*size);
-    while (std::next_permutation(autotopy.begin(), autotopy.end())){
-        if (check_autotopy(q, &autotopy[0], &autotopy[0] + factorial(ROWS), &autotopy[0] + 2*factorial(ROWS))){
-            print_perm(&autotopy[0], "alpha");
-            print_perm(&autotopy[0] + factorial(ROWS), "beta");
-            print_perm(&autotopy[0] + 2*factorial(ROWS), "gamma");
-            printf("\n");
+
+
+void find_autotopies(int *q, std::vector<int> &autotopy){
+    int size = factorial(ROWS);
+    std::vector<int> alpha(ROWS), beta(ROWS), gamma(ROWS);
+    init_perm(&alpha[0]);
+    init_perm(&beta[0]);
+    init_perm(&gamma[0]);
+
+    for (auto it = alpha.begin(); ; ) {
+        for (auto it2 = beta.begin(); ; ) {
+            for (auto it3 = gamma.begin(); ; ) {
+                if (check_autotopy(q, &alpha[0], &beta[0], &gamma[0])){
+                    autotopy.insert(autotopy.end(), alpha.begin(), alpha.end());
+                    autotopy.insert(autotopy.end(), beta.begin(), beta.end());
+                    autotopy.insert(autotopy.end(), gamma.begin(), gamma.end());
+                    for (const auto& e : autotopy) {
+                        std::cout << e;
+                    }
+                    std::cout << "\n";
+                }
+                if (!std::next_permutation(it3, gamma.end())) {
+                    break;
+                }
+            }
+            if (!std::next_permutation(it2, beta.end())) {
+                break;
+            }
+        }
+        if (!std::next_permutation(it, alpha.end())) {
+        break;
         }
     }
 }
@@ -72,7 +78,9 @@ void find_autotopy(int *q, std::vector<int>& autotopy){
 
 int main(){
     int *qgroup = (int *)malloc(ROWS*COLS * sizeof(int));
-    read_file(qgroup, "quasigroup4.csv");
+    read_file(qgroup, "quasigroup.csv");
+    std::cout << "Quasigroup: \n";
+    print_matrix(qgroup);
     std::vector<int> autotopy;
-    find_autotopy(qgroup, autotopy);
+    find_autotopies(qgroup, autotopy);
 }
